@@ -1,0 +1,7 @@
+{
+  "version": "0.22.0-alpha.1",
+  "versionCode": 39,
+  "package": "org.openrow.probe",
+  "minimumSdk": 28,
+  "certificateSha256": "e472545d544f7c90d815fbb0329f187d104391a14925db793629276b133eedbc"
+}
