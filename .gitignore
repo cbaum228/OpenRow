@@ -1,0 +1,13 @@
+tools/
+build/
+*.zip
+*.keystore
+local.properties
+.local-signing/
+.codex-attachments/
+*.log
+!tests/fixtures/*.log
+*.p12
+*.jks
+*.apk
+!distribution/*.apk
