@@ -4,6 +4,10 @@ Windows PowerShell 7, JDK 17, Android platform 35 and Build Tools 35.0.0 are req
 
 Run `./test.ps1`, `./simulate-progression.ps1`, then `./build.ps1`. The last command builds a local **debug** APK in `build/OpenRow-Probe.apk`; it is not the distributed artifact. Run the isolated native instrumentation fixtures on a connected developer tablet as documented in [shared telemetry](SHARED-WORKOUT-TELEMETRY.md). The broad telemetry fixture temporarily selects QA profiles: back up and restore the registry, remove only the returned QA IDs, and verify owner hashes. Never run it unsupervised on a tester's device.
 
+## Android Studio / Gradle (debug only, any OS)
+
+The Gradle files (`settings.gradle`, `build.gradle`, `app/build.gradle`) let Android Studio build and run debug APKs on Linux, macOS or Windows. They use the existing `app/src`, `app/res` and `app/AndroidManifest.xml`; package, version and SDK levels are read from the manifest, so it remains the single source of truth. Open the repository root in Android Studio, let it sync, then use **Run** or `./gradlew assembleDebug` (APK in `app/build/outputs/apk/debug/`). If `build/debug.keystore` exists, Gradle signs with it, so the result installs over an existing `OpenRow-Probe.apk`. Gradle's release variant is disabled on purpose: release APKs come only from `./build.ps1 -Release` and `./package-alpha.ps1`. The JVM tests in `tests/` are still run by `./test.ps1`.
+
 ## Private signing identity
 
 The release APK is non-debuggable. For the first alpha, `prepare-alpha-signing.ps1` imports the original owner's locally generated private certificate into a password-protected PKCS12 store so existing installs can update without losing data. Its certificate subject retains the historical “OpenRow Debug” name; Android's debug flag is a separate setting and is false in the release. A subject name is not a private key or an Android debug permission. The public certificate fingerprint is pinned in `release-policy.json`.
