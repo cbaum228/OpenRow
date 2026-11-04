@@ -1,0 +1,78 @@
+plugins {
+    id 'com.android.application'
+}
+
+// app/AndroidManifest.xml stays the single source of truth for the package,
+// version and SDK levels, because build.ps1 hands it straight to aapt.
+// The Android Gradle Plugin rejects or warns about some of those manifest
+// attributes, so Gradle reads them from the manifest and builds from a copy
+// that leaves them out.
+def sourceManifest = file('AndroidManifest.xml')
+def manifestText = sourceManifest.getText('UTF-8')
+def manifestValue = { String attribute ->
+    def match = manifestText =~ /\b${attribute}="([^"]+)"/
+    if (!match.find()) {
+        throw new GradleException("${attribute} not found in ${sourceManifest}")
+    }
+    match.group(1)
+}
+def gradleManifest = layout.buildDirectory.file('generated/openrow-manifest/AndroidManifest.xml').get().asFile
+gradleManifest.parentFile.mkdirs()
+gradleManifest.setText(
+    manifestText
+        .replaceFirst(/\s+package="[^"]*"/, '')
+        .replaceFirst(/\s*<uses-sdk[^>]*\/>/, '')
+        .replaceFirst(/\s+android:debuggable="[^"]*"/, ''),
+    'UTF-8')
+
+android {
+    namespace = manifestValue('package')
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = manifestValue('package')
+        minSdk = manifestValue('android:minSdkVersion') as int
+        targetSdk = manifestValue('android:targetSdkVersion') as int
+        versionCode = manifestValue('android:versionCode') as int
+        versionName = manifestValue('android:versionName')
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile gradleManifest
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // Sign with the same key as build.ps1 when it exists, so a Studio build can
+    // be installed over an existing build/OpenRow-Probe.apk without uninstalling
+    // (an uninstall would delete on-device progress). If the key is missing,
+    // the standard Android Studio debug key is used.
+    def probeKeystore = rootProject.file('build/debug.keystore')
+    if (probeKeystore.exists()) {
+        signingConfigs {
+            probeDebug {
+                storeFile = probeKeystore
+                storePassword = 'android'
+                keyAlias = 'androiddebugkey'
+                keyPassword = 'android'
+            }
+        }
+        buildTypes.debug.signingConfig = signingConfigs.probeDebug
+    }
+}
+
+// Release APKs must come from build.ps1 -Release / package-alpha.ps1 (pinned
+// signing identity, manifest rewrites). Disable Gradle's release variant so it
+// can't produce a differently signed "release" by accident.
+androidComponents {
+    beforeVariants(selector().withBuildType('release')) { variantBuilder ->
+        variantBuilder.enable = false
+    }
+}

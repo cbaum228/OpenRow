@@ -1,0 +1,20 @@
+// Gradle build used by Android Studio. The PowerShell scripts (build.ps1 etc.)
+// remain the release path; this build only produces debug APKs.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'OpenRow'
+include ':app'
